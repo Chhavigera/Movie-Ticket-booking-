@@ -1,0 +1,242 @@
+import os
+
+def load_users():
+    users = {}
+    if os.path.exists("users.txt"):
+        with open("users.txt", "r") as file:
+            for line in file:
+                if line.strip():  # Check if the line is not empty
+                    username, password = line.strip().split('|')  # Customize separator
+                    users[username] = password
+    return users
+
+def save_users(users):
+    with open("users.txt", "w") as file:
+        for username, password in users.items():
+            file.write(f"{username}|{password}\n")  # Customize separator
+
+def load_user_bookings():
+    user_bookings = {}
+    if os.path.exists("user_bookings.txt"):
+        with open("user_bookings.txt", "r") as file:
+            for line in file:
+                if line.strip():  # Check if the line is not empty
+                    username, booking_data = line.strip().split('|')  # Customize separator
+                    bookings = eval(booking_data)  # Convert string to dictionary (caution: use carefully)
+                    user_bookings[username] = bookings
+    return user_bookings
+
+def save_user_bookings(user_bookings):
+    with open("user_bookings.txt", "w") as file:
+        for username, bookings in user_bookings.items():
+            booking_data = str(bookings)  # Convert dictionary to string (caution: use carefully)
+            file.write(f"{username}|{booking_data}\n")  # Customize separator
+
+def signup(username, password):
+        users = load_users()
+        if username not in users:
+            users[username] = password
+            save_users(users)
+            return "You have signup successfully. Now, You can Login"
+        else:
+            return "This username already exist. PLEASE, use a different name"
+
+def login(username, password):
+        users = load_users()
+        if username in users and users[username] == password:
+            return f"You have logged in successfully, {username}. You can now proceed with your concert booking."
+        else:
+            return "Invalid username or password. Please try again."
+
+def add_payment(username, payment_method):
+        if os.path.exists("payments.txt"):
+            mode = "a"
+        else:
+            mode = "w"
+        with open("payments.txt", mode) as file:
+            file.write(f"{username},{payment_method}\n")
+        print("You have added Payment method successfully!!")
+
+def edit_profile(username, field, new_value):
+        users=load_users()
+        if username in users:
+            if field.lower() == "username":
+                if new_value not in users:
+                    users[new_value] = users.pop(username)
+                    save_users(users)
+                    print("Your new Username has been updated successfully!")
+                else:
+                    print("This Username already exists. Please choose another one.")
+            elif field.lower() == "password":
+                users[username] = new_value
+                save_users(users)
+                print("Your New Password has been updated successfully!")
+            else:
+                print("Invalid field. Please choose 'username' or 'password'.")
+
+def select_ticket_type(ticket_prices):
+        print("\nTicket Types:")
+        for ticket_type, price in ticket_prices.items():
+            print(f"{ticket_type}: ${price}")
+
+def display_discounts(discounts):
+        print("\nAvailable Discounts:")
+        for discount, discount_rate in discounts.items():
+            print(f"{discount}: {discount_rate*100}% off")
+
+def apply_discount(price, discount_code, discounts):
+        if discount_code in discounts:
+            discount_amount = price * discounts[discount_code]
+            price -= discount_amount
+            print("Discount applied: {}% off".format(discounts[discount_code] * 100))
+        else:
+            print("Invalid discount code. No discount applied.")
+        return price
+
+def book_ticket(username, ticket_type, price, seat):
+        booking = {"Ticket Type": ticket_type, "Price": price, "Seat": seat}
+        if username in user_bookings:
+            user_bookings[username].append(booking)
+        else:
+            user_bookings[username] = [booking]
+        save_user_bookings(user_bookings)
+
+def show_bookings(username):
+        user_bookings = load_user_bookings()
+        if username in user_bookings:
+            print(f"\n==={username}'s Bookings===")
+            for idx, booking in enumerate(user_bookings[username], start=1):
+                print(f"Booking {idx}: {booking}")
+        else:
+            print("No bookings found for this user.")
+
+def process_payment(amount, payment_method):
+        if payment_method.lower()=="credit card":
+            print(f"Processing payment of ${amount} using Credit Card..")
+        elif payment_method.lower()=="debit card":
+            print(f"Processing payment of ${amount} using Debit Card..")
+        elif payment_method.lower()=="paytm":
+            print(f"Processing payment of ${amount} using Paytm..")
+        elif payment_method.lower()=="google pay":
+            print(f"Processing payment of ${amount} using Google Pay..")
+        else:
+            print("Invalid payment method. Please Try again.")
+
+def print_ticket(username, ticket_type, price, seat):
+        print("\n===Ticket Summary===")
+        print(f"Username: {username}")
+        print(f"Ticket Type: {ticket_type}")
+        print(f"Price: ${price}")
+        print(f"Seat: {seat}")
+        print("Enjoy the Concert!")
+
+def display_available_seats(available_seats):
+        print("\n===Available Seats===")
+        for seat in available_seats:
+            print(seat)
+
+def initialize_seats():
+        seats = []
+        for row in range(ord('A'), ord('G')+1):
+            for num in range(1, 11):
+                seats.append(chr(row) + str(num))
+        return seats
+
+def load_available_seats():
+        if os.path.exists("available_seats.txt"):
+            with open("available_seats.txt", "r") as file:
+                return file.read().splitlines()
+        else:
+            with open("available_seats.txt", "w") as file:
+                return []
+
+def save_available_seats(available_seats):
+        with open("available_seats.txt", "w") as file:
+            file.write("\n".join(available_seats))
+
+        users = load_users()
+        ticket_prices = {"General Admission": 70, "Student": 50, "Senior": 45}
+        discounts = {"EARLYBIRD": 0.1, "GROUPON": 0.2, "STUDENT": 0.15, "SENIOR": 0.1}
+        user_bookings = load_user_bookings()
+        available_seats = load_available_seats()
+
+        if not available_seats:
+          available_seats = initialize_seats()
+          save_available_seats(available_seats)
+
+        while True:
+         print("\n=== Welcome to Concert Ticket Booking System ===")
+         print("1. Signup")
+         print("2. Login")
+         print("3. Exit")
+         choice = input("Enter your choice: ")
+
+        if choice == "1":
+            uname = input("Enter the username: ")
+            passname = input("Enter the password: ")
+            signup_result = signup(uname, passname)
+            print(signup_result)
+        elif choice == "2":
+            while True:
+                u = input("Enter your username: ")
+                p = input("Enter your password: ")
+                login_result = login(u, p)
+                print(login_result)
+                if login_result.startswith("You have logged in successfully"):
+                    while True:
+                        print("\n=== User Menu ===")
+                        print("1. Edit Profile")
+                        print("2. Add Payment Method")
+                        print("3. Book Ticket")
+                        print("4. Show My Bookings")
+                        print("5. Display Ticket Types")
+                        print("6. Display Discounts")
+                        print("7. Back")
+
+                        user_choice= input("Enter your choice: ")
+
+                        if user_choice == "1":
+                            field = input("Enter field to edit (username/password): ")
+                            new_value = input("Enter new value: ")
+                            edit_profile(u, field, new_value)
+                        elif user_choice == "2":
+                            pay = input("Enter the desired payment method (Credit Card/Debit Card/Paytm/Google Pay): ").title()
+                            add_payment(u, pay)
+                        elif user_choice == "3":
+                            select_ticket_type(ticket_prices)
+                            ticket_type = input("Enter ticket type: ").title()
+                            if ticket_type in ticket_prices:
+                                price = ticket_prices[ticket_type]
+                                discount_code = input("Enter discount code (if any): ").upper()
+                                price = apply_discount(price, discount_code, discounts)
+                                display_available_seats(available_seats)
+                                seat = input("Enter seat number or section: ").upper()
+                                if seat in available_seats:
+                                    available_seats.remove(seat)
+                                    book_ticket(u, ticket_type, price, seat)
+                                    pay = input("Enter payment method (Credit Card/Debit Card/Paytm/Google Pay): ").title()
+                                    process_payment(price, pay)
+                                    print_ticket(u, ticket_type, price, seat)
+                                    save_available_seats(available_seats)
+                                else:
+                                    print("Invalid seat selection.")
+                            else:
+                                print("Invalid ticket type.")
+                        elif user_choice == "4":
+                            show_bookings(u)
+                        elif user_choice == "5":
+                            select_ticket_type(ticket_prices)
+                        elif user_choice == "6":
+                            display_discounts(discounts)
+                        elif user_choice == "7":
+                            break
+                        else:
+                            print("Invalid choice. Please Try again.")
+                    break
+        elif choice == "3":
+            print("Exiting the program. Goodbye!")
+        break
+     else:
+      print("Invalid choice. Please try again.")
+
+main()
